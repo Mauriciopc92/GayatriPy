@@ -1,3 +1,4 @@
+from functions import get_ticker_data, get_benchmark_data
 import streamlit as st
 import pandas as pd
 import webbrowser
@@ -8,32 +9,11 @@ from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 from streamlit_option_menu import option_menu
 
-
 st.set_page_config(
     page_title="Panorama",
     page_icon="C:/Users/mauri/OneDrive/Documentos/Code/Gayatri/icons/search_candles.png",
     layout="wide"
 )
-
-def get_ticker_data(ticker, startDate, endDate): # period,
-    stock = yf.Ticker(f"{ticker}.sa")
-    hist = stock.history(start=startDate, end=endDate)#period=period, 
-    fechamento = hist['Close']
-    return fechamento
-
-def get_benchmark_data(benchmark, startDate, endDate): # period,
-    bench = yf.Ticker(benchmark)
-    hist_bench = bench.history(start=startDate, end=endDate) #period=period,
-    fechamento_bench = hist_bench['Close']
-    return fechamento_bench
-
-#def merge_data(fechamento, fechamento_bench, stock, bench):
-    # Unir os DataFrames usando a coluna de data em comum
-    df_merged = pd.merge(fechamento, fechamento_bench, on='Date', suffixes=(stock, bench))
-    # Resetar o índice
-    df_merged = df_merged.reset_index()
-    df_merged["Date"] = df_merged["Date"].astype(str).str.slice(0, -15)
-    return df_merged
 
 today = datetime.now()
 oneYago = today - timedelta(days=365)
@@ -96,10 +76,10 @@ pctChange, x="Data", y=["% IBOV", "% {}".format(ticker.upper())], color=["#16acc
 )    
 st.divider()
 
-# Setores: 43
-# Petroleo, gas e biocombustiveis
-#https://www.fundamentus.com.br/resultado.php?setor=30
+earnings = empresa.earnings_dates.drop_duplicates()
+st.header("Balanços de {}".format(ticker.upper()))
+col7, col8 = st.columns([0.4, 0.6])
+col7.write(earnings)
+col8.bar_chart(earnings["Reported EPS"])
 
-#Subsetor/segmento: 86
-#Exploracao, refino e distribuicao
-#https://www.fundamentus.com.br/resultado.php?segmento=52
+
