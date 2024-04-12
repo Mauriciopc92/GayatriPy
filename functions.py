@@ -1,5 +1,6 @@
 import yfinance as yf
 import pandas as pd
+from io import StringIO
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
@@ -26,7 +27,7 @@ def get_ticker_list():
     local_tabela = '/html/body/div[1]/div[2]/table'
     tabela = driver.find_element('xpath', local_tabela)
     html_tabela = tabela.get_attribute('outerHTML')
-    tabela = pd.read_html(str(html_tabela))[0]  # FutureWarning: Passing literal html to 'read_html' is deprecated and will be removed in a future version. To read from a literal string, wrap it in a 'StringIO' object.
+    tabela = pd.read_html(StringIO(str(html_tabela)))[0]  # FutureWarning: Passing literal html to 'read_html' is deprecated and will be removed in a future version. To read from a literal string, wrap it in a 'StringIO' object.
     driver.quit()
     tickers = tabela["Papel"].sort_values()
     tickers.to_csv('data/tickers.csv', index=False)
@@ -34,8 +35,9 @@ def get_ticker_list():
 
 #Gerar lista de setores e salvar no csv, checar se ha novas empresas nos setores e adicionar ao csv
 def get_sector():
+    tickers = pd.read_csv('data/tickers.csv')
     driver = webdriver.Chrome(service = Service(ChromeDriverManager().install()), options=chrome_options)
-    driver.get('https://fundamentus.com.br/resultado.php')
+    driver.get('https://www.fundamentus.com.br/detalhes.php?papel=ALPA4')
     local_tabela = '/html/body/div[1]/div[2]/table'
     tabela = driver.find_element('xpath', local_tabela)    
     pass
