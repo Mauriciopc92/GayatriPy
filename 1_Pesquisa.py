@@ -1,4 +1,4 @@
-from functions import get_ticker_data, get_benchmark_data
+from functions import get_ticker_data, get_benchmark_data, get_ticker_list
 import streamlit as st
 import pandas as pd
 import webbrowser
@@ -8,10 +8,11 @@ import plotly.express as px
 from datetime import datetime, timedelta
 import matplotlib.pyplot as plt
 from streamlit_option_menu import option_menu
+import streamlit.components.v1 as components
 
 st.set_page_config(
     page_title="Panorama",
-    page_icon="C:/Users/mauri/OneDrive/Documentos/Code/Gayatri/icons/search_candles.png",
+    page_icon= "icons\search_candles.png",
     layout="wide"
 )
 
@@ -25,6 +26,14 @@ oneWago = today - timedelta(days=7)
 #    icons=['house', 'cloud-upload', "list-task", 'gear'], 
 #    menu_icon="cast", default_index=0, orientation="horizontal")
     #https://icons.getbootstrap.com
+
+# Atualiza a lista de Tickers no primeiro dia do mes, nos demais, le do arquivo csv
+if today.day == 1:
+    ticker_list = get_ticker_list()
+else:
+    ticker_list = pd.read_csv("data/tickers.csv")
+
+ticker_list
 
 with st.sidebar:
     ticker = st.text_input('Digite o Ticker', 'PETR4')
@@ -53,33 +62,43 @@ ratio = stockClose/benchClose
 empresa = yf.Ticker(f"{ticker}.sa")
 hist = empresa.history(start=start, end=end) #period=periodo, 
 yestPrice = hist["Close"].iloc[-1]
+earnings = empresa.earnings_dates.drop_duplicates()
 
 st.header(f"{empresa.info['longName']}")
 st.divider()
+col1, col2 = st.columns(2)
+#st.write(empresa.info)
+with col1:
+    col3, col4 = st.columns(2)
+    with col3:
+        st.metric("Preço", "R$ {:.2f}".format(empresa.info['currentPrice']), " ")
+        st.metric("Variação no dia", "R$ {:.2f}".format(empresa.info['currentPrice'] - yestPrice), 
+                "{:.2f}%".format(((empresa.info['currentPrice'] - yestPrice) /yestPrice) *100))
+    with col4:
+        st.metric("Média de 52 Semanas", 
+                "R$ {:.2f}".format(empresa.info['fiftyDayAverage']), 
+                "{:.2f}%".format(empresa.info['52WeekChange']))
+        st.metric("Ratio", "{:.2f}%".format(pctChange["%Ratio"].iloc[0]), " ")
 
-col3, col4, col5, col6 = st.columns(4)
-col3.metric("Preço", "R$ {:.2f}".format(empresa.info['currentPrice']), " ")
-col4.metric("Variação no dia", "R$ {:.2f}".format(empresa.info['currentPrice'] - yestPrice), 
-            "{:.2f}%".format(((empresa.info['currentPrice'] - yestPrice) /yestPrice) *100))
-col5.metric("52 Semanas", 
-            "R$ {:.2f} - {:.2f}".format(empresa.info['fiftyTwoWeekLow'], empresa.info['fiftyTwoWeekHigh']), 
-            "{:.2f}%".format(empresa.info['52WeekChange']))
-col6.metric("Ratio", "{:.2f}%".format(pctChange["%Ratio"].iloc[0]), " ")
-st.divider()
-st.write("Desempenho de {} vs IBOV (%)".format(ticker.upper()))
-st.line_chart(
-pctChange, x="Data", y=["% IBOV", "% {}".format(ticker.upper())], color=["#16acc9", "#c98e02"]  # Optional
-)
-st.write("Desempenho de {} vs Empresas do Setor (%)".format(ticker.upper()))
-st.line_chart(
-pctChange, x="Data", y=["% IBOV", "% {}".format(ticker.upper())], color=["#16acc9", "#c98e02"]  # Optional
-)    
+    st.divider()
+
+    st.write("Desempenho de {} vs IBOV (%)".format(ticker.upper()))
+    st.line_chart(
+    pctChange, x="Data", y=["% IBOV", "% {}".format(ticker.upper())], color=["#16acc9", "#c98e02"]  # Optional
+    )
+    st.write("Desempenho de {} vs Empresas do Setor (%)".format(ticker.upper()))
+    st.line_chart(
+    pctChange, x="Data", y=["% IBOV", "% {}".format(ticker.upper())], color=["#16acc9", "#c98e02"]  # Optional
+    )    
+
+with col2:
+    st.write("Balanços de {}".format(ticker.upper()))
+    #st.write(earnings)
+    st.bar_chart(earnings["Reported EPS"])
+
 st.divider()
 
-earnings = empresa.earnings_dates.drop_duplicates()
-st.header("Balanços de {}".format(ticker.upper()))
-col7, col8 = st.columns([0.4, 0.6])
-col7.write(earnings)
-col8.bar_chart(earnings["Reported EPS"])
+
+
 
 
